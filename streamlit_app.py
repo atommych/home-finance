@@ -17,15 +17,10 @@ st.write(
     """
 )
 
-uploaded_files = st.file_uploader(
-    "Selecione seus extratos em PDF", accept_multiple_files=True, type=['pdf']
-)
-
-
 # Load the data from a CSV. We're caching this so it doesn't reload every time the app
 # reruns (e.g. if the user interacts with the widgets).
 @st.cache_data
-def load_extrato(text):
+def import_pdf(text):
     table = text.split('\n')
     #print('Conta:'+ table[1])
     table[9] = table[8] + ' ' +  table[9]
@@ -35,8 +30,7 @@ def load_extrato(text):
     for row in table[9:]:
         saldo = re.sub(r".*(?<=\d\.\d\d\s)", "", row)
         data = re.sub(r" (?=\d+\.\d\d).*", "", row)
-        compra_valor =  re.sub(r"(?=\d\.\d\d).*(?<=\s\d\.\d\d\s)", "", row)
-        valores = re.sub(r".*(?<!\d\d\.\d\d)\s", "", compra_valor)
+        valores = re.sub(r".*(?<!\d\d\.\d\d)\s", "", row)
         valor = valores.split(' ')[0]
         pattern = r"^\d+\.\d+ \d+\.\d+ (.*?) \d+\.\d+ \d+\.\d+$"
         match = re.search(pattern, row)
@@ -57,9 +51,13 @@ def load_extrato(text):
     return pd.DataFrame.from_dict(transacoes)
 
 
+uploaded_files = st.file_uploader(
+    "Selecione seus extratos em PDF", accept_multiple_files=True, type=['pdf']
+)
+
 text = ""
 df_trx = pd.DataFrame()
-if uploaded_files is not None:
+if uploaded_files:
     for uploaded_file in uploaded_files:
         #bytes_data = uploaded_file.read()
         st.write("filename:", uploaded_file.name)
@@ -76,7 +74,7 @@ if uploaded_files is not None:
         text = re.sub(r"[\S\s]*CONTA SIMPLES N.", "", text)
         text = re.sub(r"SALDO FINAL[\S\s]*", "", text)
 
-        df_pdf = load_extrato(text)
+        df_pdf = import_pdf(text)
         df_trx = pd.concat([df_trx, df_pdf], ignore_index=True)
 
     st.write(df_trx)
@@ -123,5 +121,3 @@ if uploaded_files is not None:
 #    df_reshaped,
 #    use_container_width=True,
 #)
-#
-
