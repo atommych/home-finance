@@ -34,22 +34,26 @@ def load_extrato(text):
 
     for row in table[9:]:
         saldo = re.sub(r".*(?<=\d\.\d\d\s)", "", row)
-        data = re.sub(r" (?=\d\.\d\d).*", "", row)
+        data = re.sub(r" (?=\d+\.\d\d).*", "", row)
         compra_valor =  re.sub(r"(?=\d\.\d\d).*(?<=\s\d\.\d\d\s)", "", row)
         valores = re.sub(r".*(?<!\d\d\.\d\d)\s", "", compra_valor)
         valor = valores.split(' ')[0]
-        descricao = re.sub(r"(?!\s)\d+\..*", "", compra_valor)
+        pattern = r"^\d+\.\d+ \d+\.\d+ (.*?) \d+\.\d+ \d+\.\d+$"
+        match = re.search(pattern, row)
+        descricao=''
+        if match:
+            descricao = match.group(1)
         tipo_trans = descricao.split(' ')[0]
         descricao = ' '.join(descricao.split(' ')[1:])
 
-        trans_obj = { 'data':data,
+        trans_obj = {'data':data,
                      'tipo_trans': tipo_trans,
                      'descricao': descricao,
-                     'valor' : valor
-        }
-        transacoes.append(trans_obj)
+                     'valor' : valor }
 
-    return pd.DataFrame(transacoes)
+        transacoes.append(trans_obj)
+        
+    return pd.DataFrame.from_dict(transacoes)
 
 
 text = ""
@@ -70,8 +74,8 @@ if uploaded_files is not None:
         text = re.sub(r"[\S\s]*CONTA SIMPLES N.", "", text)
         text = re.sub(r"SALDO FINAL[\S\s]*", "", text)
 
-        df = load_extrato(text)
-        st.write(df)
+        df_trx = load_extrato(text)
+        st.write(df_trx)
         #st.write(text)
 
 
