@@ -1,18 +1,46 @@
 import altair as alt
 import pandas as pd
 import streamlit as st
+from io import BytesIO
+from pypdf import PdfReader
+import re
+
 
 # Show the page title and description.
-st.set_page_config(page_title="Movies dataset", page_icon="🎬")
-st.title("🎬 Movies dataset")
+st.set_page_config(page_title="Home Finances", page_icon=":bar_chart:")
+st.title(":bar_chart: Home Finances")
 st.write(
     """
-    This app visualizes data from [The Movie Database (TMDB)](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata).
-    It shows which movie genre performed best at the box office over the years. Just 
-    click on the widgets below to explore!
+    Este aplicativo permite visualizar os dados do seu [Extrato Bancário Digital](#).
+    Os gastos são categorizados em: Alimentação, Transporte, Lazer, Arrendamento, Saúde e Educação. 
+    Apenas faça o upload do seu extrato bancário e explore a aplicação!
     """
 )
 
+uploaded_files = st.file_uploader(
+    "Selecione seus extratos em PDF", accept_multiple_files=True, type=['pdf']
+)
+if uploaded_files is not None:
+    for uploaded_file in uploaded_files:
+        #bytes_data = uploaded_file.read()
+        st.write("filename:", uploaded_file.name)
+
+        # To convert to a string based IO:
+        pdfio = BytesIO(uploaded_file.getvalue())
+
+        reader = PdfReader(pdfio)
+        number_of_pages = len(reader.pages)
+        text = ""
+        for i in range(0,number_of_pages):
+            page = reader.pages[i]
+            text = text + page.extract_text()
+
+        text = re.sub(r"[\S\s]*CONTA SIMPLES N.", "", text)
+        text = re.sub(r"SALDO FINAL[\S\s]*", "", text)
+
+        st.write(text)
+
+        
 
 # Load the data from a CSV. We're caching this so it doesn't reload every time the app
 # reruns (e.g. if the user interacts with the widgets).
@@ -46,7 +74,6 @@ df_reshaped = df_reshaped.sort_values(by="year", ascending=False)
 st.dataframe(
     df_reshaped,
     use_container_width=True,
-    column_config={"year": st.column_config.TextColumn("Year")},
 )
 
 # Display the data as an Altair chart using `st.altair_chart`.
