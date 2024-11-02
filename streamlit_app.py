@@ -49,7 +49,8 @@ def load_extrato(text):
         trans_obj = {'data':data,
                      'tipo_trans': tipo_trans,
                      'descricao': descricao,
-                     'valor' : valor }
+                     'valor' : valor,
+                     'categoria' : ''}
 
         transacoes.append(trans_obj)
         
@@ -57,6 +58,7 @@ def load_extrato(text):
 
 
 text = ""
+df_trx = pd.DataFrame()
 if uploaded_files is not None:
     for uploaded_file in uploaded_files:
         #bytes_data = uploaded_file.read()
@@ -74,56 +76,52 @@ if uploaded_files is not None:
         text = re.sub(r"[\S\s]*CONTA SIMPLES N.", "", text)
         text = re.sub(r"SALDO FINAL[\S\s]*", "", text)
 
-        df_trx = load_extrato(text)
-        st.write(df_trx)
-        #st.write(text)
+        df_pdf = load_extrato(text)
+        df_trx = pd.concat([df_trx, df_pdf], ignore_index=True)
+
+    st.write(df_trx)
+
+    # Display the data as an Altair chart using `st.altair_chart`.
+    df_chart = pd.melt(
+        df_trx.reset_index(), id_vars="data", var_name="categoria", value_name="valor"
+    )
+    chart = (
+        alt.Chart(df_chart)
+        .mark_line()
+        .encode(
+            x=alt.X("Mes:N", title="Mês"),
+            y=alt.Y("Montante:Q", title="Montante ($)"),
+            color="Categoria:N",
+        )
+        .properties(height=320)
+    )
+    st.altair_chart(chart, use_container_width=True)
 
 
 
-@st.cache_data
-def load_data():
-    df = pd.read_csv("data/movies_genres_summary.csv")
-    return df
-
-
-df = load_data()
 
 # Show a multiselect widget with the genres using `st.multiselect`.
-genres = st.multiselect(
-    "Genres",
-    df.genre.unique(),
-    ["Action", "Adventure", "Biography", "Comedy", "Drama", "Horror"],
-)
+#genres = st.multiselect(
+#    "Categorias",
+#    df_trx.categoria.unique(),
+#    ["Alimentação", "Transporte", "Lazer", "Arrendamento", "Saúde", "Educação"],
+#)
+#
+## Show a slider widget with the years using `st.slider`.
+#years = st.slider("Years", 1986, 2006, (2000, 2016))
+#
+## Filter the dataframe based on the widget input and reshape it.
+#df_filtered = df_trx[(df["genre"].isin(genres)) & (df["year"].between(years[0], years[1]))]
+#df_reshaped = df_filtered.pivot_table(
+#    index="year", columns="genre", values="gross", aggfunc="sum", fill_value=0
+#)
+#df_reshaped = df_reshaped.sort_values(by="year", ascending=False)
+#
+#
+## Display the data as a table using `st.dataframe`.
+#st.dataframe(
+#    df_reshaped,
+#    use_container_width=True,
+#)
+#
 
-# Show a slider widget with the years using `st.slider`.
-years = st.slider("Years", 1986, 2006, (2000, 2016))
-
-# Filter the dataframe based on the widget input and reshape it.
-df_filtered = df[(df["genre"].isin(genres)) & (df["year"].between(years[0], years[1]))]
-df_reshaped = df_filtered.pivot_table(
-    index="year", columns="genre", values="gross", aggfunc="sum", fill_value=0
-)
-df_reshaped = df_reshaped.sort_values(by="year", ascending=False)
-
-
-# Display the data as a table using `st.dataframe`.
-st.dataframe(
-    df_reshaped,
-    use_container_width=True,
-)
-
-# Display the data as an Altair chart using `st.altair_chart`.
-df_chart = pd.melt(
-    df_reshaped.reset_index(), id_vars="year", var_name="genre", value_name="gross"
-)
-chart = (
-    alt.Chart(df_chart)
-    .mark_line()
-    .encode(
-        x=alt.X("year:N", title="Year"),
-        y=alt.Y("gross:Q", title="Gross earnings ($)"),
-        color="genre:N",
-    )
-    .properties(height=320)
-)
-st.altair_chart(chart, use_container_width=True)
