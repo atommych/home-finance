@@ -38,17 +38,17 @@ def load_extrato(text):
         compra_valor =  re.sub(r"(?=\d\.\d\d).*(?<=\s\d\.\d\d\s)", "", row)
         valores = re.sub(r".*(?<!\d\d\.\d\d)\s", "", compra_valor)
         valor = valores.split(' ')[0]
-        descricao = re.sub(r"(?!\s)\d+\..*", "", compra_valor)  
+        descricao = re.sub(r"(?!\s)\d+\..*", "", compra_valor)
         tipo_trans = descricao.split(' ')[0]
         descricao = ' '.join(descricao.split(' ')[1:])
 
         trans_obj = { 'data':data,
                      'tipo_trans': tipo_trans,
                      'descricao': descricao,
-                     'valor' : valor                     
+                     'valor' : valor
         }
         transacoes.append(trans_obj)
-        
+
     return pd.DataFrame(transacoes)
 
 
@@ -62,7 +62,7 @@ if uploaded_files is not None:
         pdfio = BytesIO(uploaded_file.getvalue())
 
         reader = PdfReader(pdfio)
-        number_of_pages = len(reader.pages)        
+        number_of_pages = len(reader.pages)
         for i in range(0,number_of_pages):
             page = reader.pages[i]
             text = text + page.extract_text()
@@ -122,4 +122,4 @@ chart = (
     )
     .properties(height=320)
 )
-st.altair_chart(chart, use_container_width=True)#
+st.altair_chart(chart, use_container_width=True)
