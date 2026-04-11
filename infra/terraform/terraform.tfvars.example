@@ -1,0 +1,6 @@
+project_id   = "your-gcp-project-id"
+region       = "europe-west1"
+service_name = "home-finance"
+supabase_url = "https://your-project.supabase.co"
+supabase_key = "your-supabase-anon-key"
+image        = "gcr.io/your-gcp-project-id/home-finance:latest"

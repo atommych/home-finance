@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Streamlit App",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "-f", "infra/docker/docker-compose.yml", "up", "--build", "app"],
+      "port": 8501
+    },
+    {
+      "name": "Postgres DB",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "-f", "infra/docker/docker-compose.yml", "up", "postgres"],
+      "port": 5432
+    },
+    {
+      "name": "Full Stack (App + DB)",
+      "runtimeExecutable": "docker",
+      "runtimeArgs": ["compose", "-f", "infra/docker/docker-compose.yml", "up", "--build"],
+      "port": 8501
+    }
+  ]
+}
