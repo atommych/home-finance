@@ -8,7 +8,8 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   REGION: europe-west1
   SERVICE_NAME: home-finance
-  IMAGE: gcr.io/${{ secrets.GCP_PROJECT_ID }}/home-finance
+  REPO_NAME: home-finance
+  IMAGE: europe-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/home-finance/app
 
 jobs:
   deploy:
@@ -28,8 +29,19 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Configure Docker for GCR
-        run: gcloud auth configure-docker --quiet
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+
+      - name: Ensure Artifact Registry repository exists
+        run: |
+          gcloud artifacts repositories describe ${{ env.REPO_NAME }} \
+            --location=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} 2>/dev/null || \
+          gcloud artifacts repositories create ${{ env.REPO_NAME }} \
+            --repository-format=docker \
+            --location=${{ env.REGION }} \
+            --project=${{ env.PROJECT_ID }} \
+            --description="Home Finance Docker images"
 
       - name: Build Docker image
         run: |
@@ -40,7 +52,7 @@ jobs:
             -t ${{ env.IMAGE }}:latest \
             .
 
-      - name: Push to GCR
+      - name: Push to Artifact Registry
         run: |
           docker push ${{ env.IMAGE }}:${{ github.sha }}
           docker push ${{ env.IMAGE }}:latest

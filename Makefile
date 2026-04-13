@@ -80,10 +80,12 @@ build-prod:
 
 deploy-manual:
 	@test -n "$(GCP_PROJECT)" || (echo "ERROR: make deploy-manual GCP_PROJECT=your-project-id" && exit 1)
-	docker build --target production -f infra/docker/Dockerfile -t gcr.io/$(GCP_PROJECT)/home-finance:latest .
-	docker push gcr.io/$(GCP_PROJECT)/home-finance:latest
+	gcloud auth configure-docker europe-west1-docker.pkg.dev --quiet
+	docker build --target production -f infra/docker/Dockerfile \
+		-t europe-west1-docker.pkg.dev/$(GCP_PROJECT)/home-finance/app:latest .
+	docker push europe-west1-docker.pkg.dev/$(GCP_PROJECT)/home-finance/app:latest
 	gcloud run deploy home-finance \
-		--image gcr.io/$(GCP_PROJECT)/home-finance:latest \
+		--image europe-west1-docker.pkg.dev/$(GCP_PROJECT)/home-finance/app:latest \
 		--region europe-west1 \
 		--port 8501 \
 		--allow-unauthenticated \

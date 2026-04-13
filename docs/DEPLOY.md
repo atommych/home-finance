@@ -36,34 +36,43 @@
 gcloud auth login
 
 # Set project
-gcloud config set project YOUR_PROJECT_ID
+export GCP_PROJECT=your-project-id
+gcloud config set project $GCP_PROJECT
 
 # Enable required APIs
 gcloud services enable \
   run.googleapis.com \
-  containerregistry.googleapis.com \
+  artifactregistry.googleapis.com \
   cloudbuild.googleapis.com
+
+# Create Artifact Registry Docker repository
+gcloud artifacts repositories create home-finance \
+  --repository-format=docker \
+  --location=europe-west1 \
+  --description="Home Finance Docker images"
 
 # Create a service account for CI/CD
 gcloud iam service-accounts create github-deployer \
   --display-name="GitHub Actions Deployer"
 
 # Grant permissions
-gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:github-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+SA=github-deployer@${GCP_PROJECT}.iam.gserviceaccount.com
+
+gcloud projects add-iam-policy-binding $GCP_PROJECT \
+  --member="serviceAccount:${SA}" \
   --role="roles/run.admin"
 
-gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:github-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/storage.admin"
+gcloud projects add-iam-policy-binding $GCP_PROJECT \
+  --member="serviceAccount:${SA}" \
+  --role="roles/artifactregistry.writer"
 
-gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:github-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+gcloud projects add-iam-policy-binding $GCP_PROJECT \
+  --member="serviceAccount:${SA}" \
   --role="roles/iam.serviceAccountUser"
 
 # Create and download key
 gcloud iam service-accounts keys create key.json \
-  --iam-account=github-deployer@YOUR_PROJECT_ID.iam.gserviceaccount.com
+  --iam-account=${SA}
 ```
 
 ---
@@ -79,8 +88,10 @@ cp terraform.tfvars.example terraform.tfvars
 
 # First, build and push the Docker image
 cd ../..
-docker build --target production -f infra/docker/Dockerfile -t gcr.io/YOUR_PROJECT_ID/home-finance:latest .
-docker push gcr.io/YOUR_PROJECT_ID/home-finance:latest
+export IMAGE=europe-west1-docker.pkg.dev/${GCP_PROJECT}/home-finance/app
+gcloud auth configure-docker europe-west1-docker.pkg.dev
+docker build --target production -f infra/docker/Dockerfile -t ${IMAGE}:latest .
+docker push ${IMAGE}:latest
 
 # Deploy
 cd infra/terraform
@@ -103,23 +114,27 @@ terraform apply
 | `SUPABASE_URL` | Your Supabase project URL |
 | `SUPABASE_KEY` | Your Supabase anon key |
 
-3. Push to `main` branch — the deploy workflow triggers automatically
+3. Push to `master` branch — the deploy workflow triggers automatically
+4. The workflow auto-creates the Artifact Registry repository if it doesn't exist
 
 ---
 
 ## Step 4: Manual deploy (quickest)
 
 ```bash
-# Build
-docker build --target production -f infra/docker/Dockerfile -t gcr.io/YOUR_PROJECT_ID/home-finance:latest .
+export GCP_PROJECT=your-project-id
+export IMAGE=europe-west1-docker.pkg.dev/${GCP_PROJECT}/home-finance/app
 
-# Push
-gcloud auth configure-docker
-docker push gcr.io/YOUR_PROJECT_ID/home-finance:latest
+# Auth
+gcloud auth configure-docker europe-west1-docker.pkg.dev
+
+# Build and push
+docker build --target production -f infra/docker/Dockerfile -t ${IMAGE}:latest .
+docker push ${IMAGE}:latest
 
 # Deploy
 gcloud run deploy home-finance \
-  --image gcr.io/YOUR_PROJECT_ID/home-finance:latest \
+  --image ${IMAGE}:latest \
   --region europe-west1 \
   --port 8501 \
   --set-env-vars "SUPABASE_URL=https://xxx.supabase.co,SUPABASE_KEY=xxx,DEBUG=false" \
@@ -147,5 +162,5 @@ gcloud run deploy home-finance \
 |---------|-----------|-------------|
 | Supabase (DB + Auth) | 500MB DB, 50K MAU | $25/mo Pro |
 | Cloud Run | 2M requests, 360K vCPU-sec | ~$0.00002/req |
-| Container Registry | 500MB storage | $0.026/GB |
+| Artifact Registry | 500MB storage | $0.10/GB |
 | **Total at launch** | **$0** | |

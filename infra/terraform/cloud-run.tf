@@ -1,3 +1,11 @@
+# Artifact Registry repository for Docker images
+resource "google_artifact_registry_repository" "docker" {
+  location      = var.region
+  repository_id = "home-finance"
+  description   = "Home Finance Docker images"
+  format        = "DOCKER"
+}
+
 resource "google_cloud_run_v2_service" "app" {
   name     = var.service_name
   location = var.region

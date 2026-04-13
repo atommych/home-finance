@@ -28,6 +28,6 @@ variable "supabase_key" {
 }
 
 variable "image" {
-  description = "Docker image to deploy (e.g., gcr.io/PROJECT/home-finance:latest)"
+  description = "Docker image to deploy (e.g., europe-west1-docker.pkg.dev/PROJECT/home-finance/app:latest)"
   type        = string
 }

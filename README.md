@@ -146,7 +146,7 @@ make deploy-manual GCP_PROJECT=your-project-id
 
 **Automated (GitHub Actions):**
 
-Push to `main` triggers build + deploy. Set repository secrets: `GCP_PROJECT_ID`, `GCP_SA_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`.
+Push to `master` triggers build + deploy. Set repository secrets: `GCP_PROJECT_ID`, `GCP_SA_KEY`, `SUPABASE_URL`, `SUPABASE_KEY`.
 
 **Infrastructure as Code (Terraform):**
 
