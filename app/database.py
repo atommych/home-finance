@@ -1,9 +1,9 @@
 """Supabase client setup."""
 
 import streamlit as st
-from supabase import Client, create_client
 
 from app.config import settings
+from supabase import Client, create_client
 
 
 @st.cache_resource
